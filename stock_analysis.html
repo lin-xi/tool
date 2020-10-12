@@ -35,6 +35,10 @@
             padding: 5px;
         }
 
+        .cel-name {
+            width: 200px;
+        }
+
         .btn {
             display: inline-block;
             width: 100px;
@@ -72,7 +76,9 @@
             <div class="list" v-for="(item, i) in stockList">
                 <div class="list-item">
                     <span>{{item.index}}</span>
-                    <span>{{item.name}}</span>
+                    <span class="cel-name">{{item.name}}</span>
+                    <span class="cel-percent">{{item.percent}}</span>
+                    <span class="cel-amount">{{item.amount}}</span>
                 </div>
             </div>
         </div>
@@ -786,12 +792,13 @@ ASM太平洋
                             }
                             i++;
                         }
+                        console.log(this.stockList);
 
                         i = 0;
                         while (i < contentLines.length) {
                             const line = contentLines[i].trim()
                             if (noRegex.test(line)) {
-                                let j = 0;
+                                let j = 1;
                                 let temp = {};
                                 while (i + j < contentLines.length) {
                                     let newLine = contentLines[i + j].trim();
@@ -801,15 +808,17 @@ ASM太平洋
                                     } else if (amountRegex.test(newLine) && temp.amount === undefined) {
                                         temp.amount = newLine;
                                         j++;
-                                    } else if (noRegex.test(line)) {
-                                        let stock = this.stockList[parseInt(line)]
+                                    } else if (noRegex.test(newLine) && (newLine - line) == 1) {
+                                        console.log(line);
+                                        let stock = this.stockList[line - 1];
                                         stock = Object.assign(stock, temp);
-                                        i = j;
+                                        i = i + j;
+                                        break;
                                     } else {
-
+                                        i++;
+                                        break;
                                     }
                                 }
-                                contentLines.splice(i, 1);
                             } else {
                                 i++;
                             }

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta content="always" name="referrer">
+    <meta name="theme-color" content="#2932e1">
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <title>人机对战-五子棋</title>
+
+    <style type="text/css" index="weather">
+        #app {
+            display: flex
+        }
+
+        .chess {
+            width: 800px;
+            height: 800px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div class="chess">
+            <canvas ref="canvas"></canvas>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        class Game {
+            constructor(dom) {
+                this.dom = dom;
+                this.player = 1;
+                this.DIMENSION = 12;
+                this.SIZE = 60;
+                this.QIZI = 20
+
+                let board = [];
+                for (let i = 0; i < this.DIMENSION; i++) {
+                    let row = [];
+                    for (let j = 0; j < this.DIMENSION; j++) {
+                        row.push(0);
+                    }
+                    board.push(row)
+                }
+                this.board = board;
+                this.state = board.slice(0);
+
+                this.initCanvas(dom);
+                this.eventHandle(dom);
+            }
+
+            initCanvas(dom) {
+                const canvas = dom;
+                const parent = canvas.parentNode;
+                this.context = canvas.getContext('2d');
+                const devicePixelRatio = window.devicePixelRatio || 1;
+                const backingStoreRatio =
+                    this.context.webkitBackingStorePixelRatio ||
+                    this.context.mozBackingStorePixelRatio ||
+                    this.context.msBackingStorePixelRatio ||
+                    this.context.oBackingStorePixelRatio ||
+                    this.context.backingStorePixelRatio ||
+                    1;
+                const ratio = devicePixelRatio / backingStoreRatio;
+                this.ratio = ratio;
+
+                const rect = parent.getBoundingClientRect();
+                this.width = rect.width;
+                this.height = rect.height;
+                canvas.style.width = rect.width + "px";
+                canvas.style.height = rect.height + "px";
+
+                canvas.width = rect.width * this.ratio;
+                canvas.height = rect.height * this.ratio;
+                this.context.scale(this.ratio, this.ratio);
+                this.context.lineWidth = 2;
+                this.context.strokeStyle = '#cccccc';
+                this.context.fillStyle = 'coral';
+                this.context.lineJoin = 'round';
+                this.context.font = '16px sans-serif';
+                this.context.textBaseline = 'hanging';
+            }
+
+            draw() {
+                this.context.clearRect(0, 0, this.width, this.height);
+                for (let i = 0; i < this.board.length; i++) {
+                    let row = this.board[i];
+                    for (let j = 0; j < row.length; j++) {
+                        this.context.strokeRect((i + 1) * this.SIZE, (j + 1) * this.SIZE, this.SIZE, this.SIZE);
+                        this.context.fillStyle = 'coral';
+                        this.context.fillRect((i + 1) * this.SIZE, (j + 1) * this.SIZE, this.SIZE, this.SIZE);
+                        if (this.state[i][j] == 1) {
+                            this.context.beginPath();
+                            this.context.arc((i + 1) * this.SIZE, (j + 1) * this.SIZE, this.QIZI, 0, 2 * Math.PI);
+                            this.context.closePath();
+                            this.context.fillStyle = "black";
+                            this.context.fill();
+                            console.log("fill black")
+                        } else if (this.state[i][j] == 2) {
+                            this.context.beginPath();
+                            this.context.arc((i + 1) * this.SIZE, (j + 1) * this.SIZE, this.QIZI, 0, 2 * Math.PI);
+                            this.context.closePath();
+                            this.context.fillStyle = "white";
+                            this.context.fill();
+                            console.log("fill white")
+                        }
+                    }
+                }
+            }
+            move(i, j) {
+                console.log("player>>>", this.player, i, j);
+                this.state[i][j] = this.player;
+                this.player = this.player > 1 ? 1 : 2;
+                this.draw();
+            }
+            eventHandle(dom) {
+                console.log("addEventListener");
+                dom.addEventListener("click", (evt) => {
+                    console.log(this.dom.offsetLeft);
+                    let x = evt.pageX - this.dom.offsetLeft - this.SIZE;
+                    let y = evt.pageY - this.dom.offsetTop - this.SIZE;
+                    let i = Math.round(x / this.SIZE);
+                    let j = Math.round(y / this.SIZE);
+
+                    if (i < this.DIMENSION && j < this.DIMENSION) {
+                        this.move(i, j)
+                    }
+                });
+            }
+            isGameOver() {
+                for (let i = 0; i < this.DIMENSION; i++) {
+                    let row = [];
+                    for (let j = 0; j < this.DIMENSION; j++) {}
+                }
+            }
+        }
+    </script>
+
+    <script type="text/javascript">
+        new Vue({
+            el: '#app',
+            data() {},
+            methods: {},
+            mounted() {
+                let game = new Game(this.$refs.canvas);
+                game.move(1, 1);
+            }
+        });
+    </script>
+</body>
+
+</html>
