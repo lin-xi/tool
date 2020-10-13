@@ -39,14 +39,15 @@
                 this.QIZI = 20
 
                 let board = [];
-                for (let i = 0; i < this.DIMENSION; i++) {
+                for (let i = 0; i <= this.DIMENSION; i++) {
                     let row = [];
-                    for (let j = 0; j < this.DIMENSION; j++) {
+                    for (let j = 0; j <= this.DIMENSION; j++) {
                         row.push(0);
                     }
                     board.push(row)
                 }
                 this.board = board;
+                this.gameOver = false;
                 this.state = board.slice(0);
 
                 this.initCanvas(dom);
@@ -87,26 +88,39 @@
 
             draw() {
                 this.context.clearRect(0, 0, this.width, this.height);
-                for (let i = 0; i < this.board.length; i++) {
-                    let row = this.board[i];
-                    for (let j = 0; j < row.length; j++) {
-                        this.context.strokeRect((i + 1) * this.SIZE, (j + 1) * this.SIZE, this.SIZE, this.SIZE);
-                        this.context.fillStyle = 'coral';
-                        this.context.fillRect((i + 1) * this.SIZE, (j + 1) * this.SIZE, this.SIZE, this.SIZE);
+                for (let i = 0; i <= this.DIMENSION; i++) {
+                    for (let j = 0; j <= this.DIMENSION; j++) {
+                        if (i != this.DIMENSION && j != this.DIMENSION) {
+                            this.context.strokeRect((i + 1) * this.SIZE, (j + 1) * this.SIZE, this.SIZE, this.SIZE);
+                            this.context.fillStyle = 'coral';
+                            this.context.fillRect((i + 1) * this.SIZE, (j + 1) * this.SIZE, this.SIZE, this.SIZE);
+                        }
                         if (this.state[i][j] == 1) {
+                            //player: 1  black
+                            const x = (i + 1) * this.SIZE;
+                            const y = (j + 1) * this.SIZE;
                             this.context.beginPath();
-                            this.context.arc((i + 1) * this.SIZE, (j + 1) * this.SIZE, this.QIZI, 0, 2 * Math.PI);
+                            this.context.arc(x, y, this.QIZI, 0, 2 * Math.PI);
                             this.context.closePath();
-                            this.context.fillStyle = "black";
+                            const rg = this.context.createRadialGradient(x, y, 0, x, y, this.QIZI);
+                            rg.addColorStop(0, 'rgba(100,100,100,1)');
+                            rg.addColorStop(0.7, 'rgba(40,40,40,1)');
+                            rg.addColorStop(1, 'rgba(0,0,0, 1)');
+                            this.context.fillStyle = rg;
                             this.context.fill();
-                            console.log("fill black")
                         } else if (this.state[i][j] == 2) {
+                            //player: 2  white
+                            const x = (i + 1) * this.SIZE;
+                            const y = (j + 1) * this.SIZE;
                             this.context.beginPath();
-                            this.context.arc((i + 1) * this.SIZE, (j + 1) * this.SIZE, this.QIZI, 0, 2 * Math.PI);
+                            this.context.arc(x, y, this.QIZI, 0, 2 * Math.PI);
                             this.context.closePath();
-                            this.context.fillStyle = "white";
+                            const rg = this.context.createRadialGradient(x, y, 0, x, y, this.QIZI);
+                            rg.addColorStop(0, 'rgba(255,255,255,1)');
+                            rg.addColorStop(0.7, 'rgba(220,220,220,1)');
+                            rg.addColorStop(1, 'rgba(180,180,180, 1)');
+                            this.context.fillStyle = rg;
                             this.context.fill();
-                            console.log("fill white")
                         }
                     }
                 }
@@ -116,31 +130,159 @@
                 this.state[i][j] = this.player;
                 this.player = this.player > 1 ? 1 : 2;
                 this.draw();
+                if (this.isGameOver()) {
+                    alert(`Game over! ${this.player == 2? 'black' : 'white'} win`)
+                    this.gameOver = true;
+                }
             }
             eventHandle(dom) {
-                console.log("addEventListener");
                 dom.addEventListener("click", (evt) => {
-                    console.log(this.dom.offsetLeft);
                     let x = evt.pageX - this.dom.offsetLeft - this.SIZE;
                     let y = evt.pageY - this.dom.offsetTop - this.SIZE;
                     let i = Math.round(x / this.SIZE);
                     let j = Math.round(y / this.SIZE);
-
-                    if (i < this.DIMENSION && j < this.DIMENSION) {
+                    console.log(i, j);
+                    if (i <= this.DIMENSION && j <= this.DIMENSION && !this.gameOver) {
                         this.move(i, j)
                     }
                 });
             }
+            isLegalMove() {
+
+            }
             isGameOver() {
-                for (let i = 0; i < this.DIMENSION; i++) {
-                    let row = [];
-                    for (let j = 0; j < this.DIMENSION; j++) {}
+                //纵向
+                let last = -1;
+                let count = 0;
+                for (let i = 0; i <= this.DIMENSION; i++) {
+                    last = -1;
+                    count = 0;
+                    for (let j = 0; j <= this.DIMENSION; j++) {
+                        if (count == 4) {
+                            return true;
+                        } else if (this.state[i][j]) {
+                            if (this.state[i][j] == last) {
+                                count++;
+                            } else {
+                                count = 0;
+                                last = this.state[i][j];
+                            }
+                        } else {
+                            count = 0;
+                            last = -1;
+                        }
+                    }
+                    if (count == 4) {
+                        return true;
+                    }
                 }
+                //横向
+                for (let i = 0; i <= this.DIMENSION; i++) {
+                    last = -1;
+                    count = 0;
+                    for (let j = 0; j <= this.DIMENSION; j++) {
+                        if (count == 4) {
+                            return true;
+                        } else if (this.state[j][i]) {
+                            if (this.state[j][i] == last) {
+                                count++;
+                            } else {
+                                count = 0;
+                                last = this.state[i][j];
+                            }
+                        } else {
+                            count = 0;
+                            last = -1;
+                        }
+                    }
+                    if (count == 4) {
+                        return true;
+                    }
+                }
+                //斜45度
+                for (let i = 0; i <= this.DIMENSION; i++) {
+                    last = -1;
+                    count = 0;
+                    let x = this.DIMENSION - i;
+                    let y = 0;
+                    while (x >= 0 && y <= i) {
+                        if (count == 4) {
+                            return true;
+                        } else if (this.state[x][y]) {
+                            if (this.state[x][y] == last) {
+                                count++;
+                            } else {
+                                count = 0;
+                                last = this.state[x][y];
+                            }
+                        } else {
+                            count = 0;
+                            last = -1;
+                        }
+                        x--;
+                        y++;
+                    }
+                    if (count == 4) {
+                        return true;
+                    }
+
+                    last = -1;
+                    count = 0;
+                    x = i;
+                    y = this.DIMENSION;
+                    while (x <= this.DIMENSION && y >= 0) {
+                        if (count == 4) {
+                            return true;
+                        } else if (this.state[x][y]) {
+                            if (this.state[x][y] == last) {
+                                count++;
+                            } else {
+                                count = 0;
+                                last = this.state[x][y];
+                            }
+                        } else {
+                            count = 0;
+                            last = -1;
+                        }
+                        x++;
+                        y--;
+                    }
+                    if (count == 4) {
+                        return true;
+                    }
+                }
+
+                // //斜-45度
+                // for (let i = 0; i < this.DIMENSION; i++) {
+                //     last = -1;
+                //     count = 0;
+
+                //     let x = i;
+                //     let y = 0;
+                //     while (x >= 0 && y <= i) {
+                //         if (count == 4) {
+                //             return true;
+                //         } else if (this.state[y][x]) {
+                //             if (this.state[y][x] == last) {
+                //                 count++;
+                //             } else {
+                //                 count = 0;
+                //                 last = this.state[y][x];
+                //             }
+                //         } else {
+                //             count = 0;
+                //             last = -1;
+                //         }
+                //         x--;
+                //         y++;
+                //     }
+                // }
+                return false
             }
         }
     </script>
 
-    <script type="text/javascript">
+    <script type="text/javascript"">
         new Vue({
             el: '#app',
             data() {},
