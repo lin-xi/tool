@@ -68,7 +68,6 @@
             <canvas ref="canvas"></canvas>
         </div>
         <div class="result-dialog" v-show="gameOver">
-            <p>蒙特卡洛搜索树-五子棋</p>
             {{this.player == 1 ? "CarloCat win!" : "You win!"}}
         </div>
         <div class="state-board">
@@ -129,7 +128,7 @@
                 }
                 this.board = board;
                 this.gameOver = false;
-                this.state = board.slice(0);
+                this.state = new GameState(this.board, this.player);
 
                 this.initCanvas(dom);
                 this.eventHandle(dom);
@@ -178,6 +177,7 @@
             }
 
             draw() {
+                let state = this.state.state;
                 this.context.clearRect(0, 0, this.width, this.height);
                 for (let i = 0; i <= this.DIMENSION; i++) {
                     for (let j = 0; j <= this.DIMENSION; j++) {
@@ -186,7 +186,7 @@
                             this.context.fillStyle = 'coral';
                             this.context.fillRect((i + 1) * this.SIZE, (j + 1) * this.SIZE, this.SIZE, this.SIZE);
                         }
-                        if (this.state[i][j] == 1) {
+                        if (state[i][j] == 1) {
                             //player: 1  black
                             const x = (i + 1) * this.SIZE;
                             const y = (j + 1) * this.SIZE;
@@ -199,7 +199,7 @@
                             rg.addColorStop(1, 'rgba(0,0,0, 1)');
                             this.context.fillStyle = rg;
                             this.context.fill();
-                        } else if (this.state[i][j] == 2) {
+                        } else if (state[i][j] == 2) {
                             //player: 2  white
                             const x = (i + 1) * this.SIZE;
                             const y = (j + 1) * this.SIZE;
@@ -243,25 +243,12 @@
                     }
                 }
             }
-
-            move(i, j) {
-                console.log("player>>>", this.player, i, j);
-                this.state[i][j] = this.player;
-                this.draw();
-                if (this.isGameOver()) {
-                    this.gameOver = true;
-                    EventHub.emit('gameOver', {
-                        win: this.player
-                    });
-                } else {
-                    this.player = this.player > 1 ? 1 : 2;
-                }
-            }
             eventHandle(dom) {
                 dom.addEventListener("click", (evt) => {
                     let [i, j] = this.getPosition(evt);
                     if (i <= this.DIMENSION && j <= this.DIMENSION && !this.gameOver) {
-                        this.move(i, j)
+                        this.state.move(i, j);
+                        this.player = this.state.player;
                     }
                 });
                 dom.addEventListener("mousemove", (evt) => {
@@ -280,9 +267,70 @@
                 console.log(i, j);
                 return [i, j]
             }
-            isLegalMove() {
+        }
+    </script>
 
+    <script type="text/javascript">
+        class GameState {
+            constructor(state, nextPlayer) {
+                this._state = state;
+                this.player = nextPlayer;
+                this.DIMENSION = state.length - 1;
             }
+
+            get state() {
+                return this._state;
+            }
+
+            set state(sta){
+                this._state = sta;
+                this.draw();
+            }
+
+            move(i, j) {
+                this.state[i][j] = this.player;
+                if (this.isGameOver()) {
+                    this.gameOver = true;
+                    EventHub.emit('gameOver', {
+                        win: this.player
+                    });
+                } else {
+                    this.player = this.player > 1 ? 1 : 2;
+                }
+                EventHub.emit('draw');
+            }
+
+            simulateMove(i, j) {
+                let newState = this.copy();
+                newState[i][j] = this.player
+                let nextPlayer = this.player > 1 ? 1 : 2;
+                return new GameState(newState, nextPlayer);
+            }
+
+            getLegalActions() {
+                let steps = [];
+                for (let i = 0; i <= this.DIMENSION; i++) {
+                    for(let j=0; j<= this.DIMENSION; j++) {
+                        if(!this.state[i][j]) {
+                            steps.push([i,j])
+                        }
+                    }
+                }
+                return steps;
+            }
+
+            copy() {
+                let newState = []
+                for (let i = 0; i <= this.DIMENSION; i++) {
+                    let row = []
+                    for(let j=0; j<= this.DIMENSION; j++) {
+                        row.push(this.state[i][j]);
+                    }
+                    newState.push(row)
+                }
+                return newState;
+            }
+
             isGameOver() {
                 for (let i = 0; i <= this.DIMENSION; i++) {
                     let last = -1;
@@ -440,18 +488,37 @@
     </script>
 
     <script type="text/javascript">
+    class MoveStep {
+        constructor(x,y,value) {
+            this.x = x;
+            this.y = y;
+            this.value = value;
+        }
+    }
+    </script>
+
+    <script type="text/javascript">
         class MonteCarloTreeNode {
-            constructor(state, parent = null) {
-                this.number_of_visit = 0
-                this.result = {};
+            constructor(state, parent) {
+                this.numberOfVisit = 0;
+                this.results = {};
                 this.state = state;
                 this.untriedActions = [];
                 this.parent = parent;
                 this.children = [];
+                this.getUntriedActions();
+            }
+
+            get q() {
+                return this.results["true"]- this.results["false"]
             }
 
             isTerminalNode() {
                 return this.state.isGameOver();
+            }
+
+            isFullyExpanded() {
+                return this.untriedActions.length > 0;
             }
 
             getUntriedActions() {
@@ -459,34 +526,84 @@
             }
 
             expand() {
-
+                let action = this.untriedActions.pop();
+                let nextState = this.state.simulateMove(action[0], action[1]);
+                let childNode = new MonteCarloTreeNode(nextState, this)
+                this.children.push(childNode)
+                return childNode
             }
 
-            rollout() {
-
+            simulate() {
+                let currentSimulateState = this.state;
+                while(!currentSimulateState.isGameOver()){
+                    let possibleMoves = currentSimulateState.getLegalActions();
+                    let action = this.simulatePolicy(possibleMoves);
+                    currentSimulateState = currentSimulateState.simulateMove(action[0], action[1]);
+                    return currentSimulateState.isGameOver()
+                }
             }
 
-            rolloutPolicy() {
-
+            simulatePolicy(possibleMoves) {
+                //随机策略
+                return possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
             }
 
-            backpropagate() {
-
+            backpropagate(result) {
+                this.numberOfVisit += 1;
+                if(this.results[result] === undefined) {
+                    this.results[result] = 0;
+                }
+                this.results[result] += 1;
+                if(this.parent){
+                    this.parent.backpropagate(result)
+                }
             }
 
-            getBestChild() {
-
+            bestChild(cparam) {
+                let choicesWeights = this.children.map(child => {
+                    return (child.q / (child.numberOfVisit)) + cparam * Math.sqrt((2 * Math.log(this.numberOfVisit) / (child.numberOfVisit)))
+                });
+                let result = choicesWeights.reduce((prev, cur, index) => {
+                    if(cur > prev[0]) {
+                        return [cur, index]
+                    }
+                    return prev;
+                }, [-1, 0])
+                return this.children[result[1]];
             }
         }
     </script>
 
     <script type="text/javascript">
         class MonteCarloSearchTree {
+            constructor(root) {
+                this.root = root;
+            }
 
+            bestAction(simulationsNumber=1000) {
+                for (let i=0; i< simulationsNumber; i++) {
+                    let node = this.treePolicy();
+                    let reward = node.simulate();
+                    node.backpropagate(reward);
+                }
+                return this.root.bestChild(0);
+            }
+
+            treePolicy() {
+                let currentNode = this.root;
+                while(!currentNode.isTerminalNode()){
+                    if(currentNode.isFullyExpanded()) {
+                        return currentNode.expand()
+                    } else {
+                        currentNode = currentNode.bestChild();
+                    }
+                }
+                return currentNode;
+            }
         }
     </script>
 
-    <script type="text/javascript"">
+    <script type="text/javascript">
         new Vue({
             el: '#app',
             data() {
@@ -495,7 +612,16 @@
                     gameOver: false
                 }
             },
-            methods: {},
+            methods: {
+                nextMove() {
+                    let root = new MonteCarloTreeNode(this.game.state);
+                    let mcts = new MonteCarloSearchTree(root);
+                    let bestNode = mcts.bestAction(1000);
+                    this.game.state = bestNode.state;
+                    // this.game.player = bestNode.player;
+                    this.game.draw();
+                }
+            },
             mounted() {
                 let game = new Game(this.$refs.canvas);
                 EventHub.on('stateChange', (state)=>{
@@ -505,7 +631,8 @@
                     console.log(" gameOver ");
                     this.gameOver = true;
                 });
-                game.move(6, 6);
+                this.game = game;
+                this.nextMove();
             }
         });
     </script>
