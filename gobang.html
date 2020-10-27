@@ -68,16 +68,16 @@
             <canvas ref="canvas"></canvas>
         </div>
         <div class="result-dialog" v-show="gameOver">
-            {{this.player == 1 ? "CarloCat win!" : "You win!"}}
+            {{game.state.player == 1 ? "CarloCat win!" : "You win!"}}
         </div>
         <div class="state-board">
-            <div :class="player == 1 ? 'carlo-cat' : 'carlo-cat filter'">
+            <div :class="game.state.player == 1 ? 'carlo-cat' : 'carlo-cat filter'">
                 <img
                     src='data:image/svg+xml;utf8,<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg t="1602675917851" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4880" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100"><defs><style type="text/css"></style></defs><path d="M581.18 384c-40.36 0-213.64 3.96-325.18 171.9V384c0-105.88-86.12-192-192-192-35.34 0-64 28.66-64 64s28.66 64 64 64c35.28 0 64 28.72 64 64v512c0 70.6 57.4 128 128 128h352c17.68 0 32-14.32 32-32v-32c0-35.34-28.66-64-64-64h-64l256-192v288c0 17.68 14.32 32 32 32h64c17.68 0 32-14.32 32-32V579.72c-20.58 5.34-41.78 9.08-64 9.08-123.62 0-227.04-88.1-250.82-204.8zM896 192h-128l-128-128v268.8c0 106.04 85.96 192 192 192s192-85.96 192-192V64l-128 128z m-144 160c-17.68 0-32-14.32-32-32s14.32-32 32-32 32 14.32 32 32-14.32 32-32 32z m160 0c-17.68 0-32-14.32-32-32s14.32-32 32-32 32 14.32 32 32-14.32 32-32 32z" p-id="4881"></path></svg>' />
                 卡洛猫
             </div>
 
-            <div :class="player == 2 ? 'player' : 'player filter'">
+            <div :class="game.state.player == 2 ? 'player' : 'player filter'">
                 <img
                     src='data:image/svg+xml;utf8,<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg t="1602675441972" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3988" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100"><defs><style type="text/css"></style></defs><path d="M833.6 762.4A308.8 308.8 0 0 1 936 1024h-85.6c1.6-12 3.2-24 3.2-36 0-72-35.2-136-92-185.6a588 588 0 0 1-499.2 0 245.6 245.6 0 0 0-92 185.6c0 12.8 1.6 24 3.2 36H88a283.2 283.2 0 0 1-2.4-36c0-86.4 40-165.6 104.8-226.4A405.6 405.6 0 0 1 0 428.8C0 192 229.6 0 512 0s512 192 512 428.8c0 134.4-74.4 254.4-190.4 333.6zM512 295.2c-236 0-426.4-80.8-426.4 122.4s190.4 368 426.4 368c236 0 426.4-164.8 426.4-368S748 296 512 296z m199.2 204.8c-32 0-56.8-21.6-56.8-48 0-25.6 25.6-47.2 56-47.2 32 0 57.6 21.6 57.6 48s-25.6 48-56.8 48zM682.4 632c0 32-76 59.2-170.4 59.2S341.6 664 341.6 632c0-8 4.8-16 14.4-24 26.4 20.8 86.4 36 156 36s129.6-15.2 156-36c9.6 8 14.4 16 14.4 24zM312.8 500c-32 0-56.8-21.6-56.8-48 0-25.6 25.6-47.2 56.8-47.2 32 0 56.8 21.6 56.8 48s-25.6 48-56 48z" p-id="3989"></path></svg>' />
                 You
@@ -113,7 +113,6 @@
             constructor(dom) {
                 this.dom = dom;
                 this.DIMENSION = 12;
-                this._player = 1;
                 this.SIZE = 60;
                 this.QIZI = 20;
                 this.predrawPosition = [-1, -1];
@@ -127,21 +126,18 @@
                     board.push(row)
                 }
                 this.board = board;
-                this.gameOver = false;
-                this.state = new GameState(this.board, this.player);
+                this._state = new GameState(this.board, 1);
 
                 this.initCanvas(dom);
                 this.eventHandle(dom);
             }
 
-            get player() {
-                return this._player
+            get state() {
+                return this._state;
             }
-            set player(val) {
-                this._player = val;
-                EventHub.emit('stateChange', {
-                    player: this._player
-                });
+
+            set state(sta){
+                this._state = sta;
             }
 
             initCanvas(dom) {
@@ -213,7 +209,7 @@
                             this.context.fillStyle = rg;
                             this.context.fill();
                         } else if (i === this.predrawPosition[0] && j === this.predrawPosition[1]) {
-                            if (this.player === 1) {
+                            if (this.state.player === 1) {
                                 const x = (i + 1) * this.SIZE;
                                 const y = (j + 1) * this.SIZE;
                                 this.context.beginPath();
@@ -225,7 +221,7 @@
                                 rg.addColorStop(1, 'rgba(0,0,0, 0.6)');
                                 this.context.fillStyle = rg;
                                 this.context.fill();
-                            } else if (this.player === 2) {
+                            } else if (this.state.player === 2) {
                                 //player: 2  white
                                 const x = (i + 1) * this.SIZE;
                                 const y = (j + 1) * this.SIZE;
@@ -246,14 +242,13 @@
             eventHandle(dom) {
                 dom.addEventListener("click", (evt) => {
                     let [i, j] = this.getPosition(evt);
-                    if (i <= this.DIMENSION && j <= this.DIMENSION && !this.gameOver) {
+                    if (i <= this.DIMENSION && j <= this.DIMENSION) {
                         this.state.move(i, j);
-                        this.player = this.state.player;
                     }
                 });
                 dom.addEventListener("mousemove", (evt) => {
                     let [i, j] = this.getPosition(evt);
-                    if (i <= this.DIMENSION && j <= this.DIMENSION && !this.gameOver) {
+                    if (i <= this.DIMENSION && j <= this.DIMENSION) {
                         this.predrawPosition = [i, j];
                         this.draw();
                     }
@@ -264,7 +259,6 @@
                 let y = evt.pageY - this.dom.offsetTop - this.SIZE;
                 let i = Math.round(x / this.SIZE);
                 let j = Math.round(y / this.SIZE);
-                console.log(i, j);
                 return [i, j]
             }
         }
@@ -284,20 +278,21 @@
 
             set state(sta){
                 this._state = sta;
-                this.draw();
+                this.player = 2;
+                if(this.isGameOver()) {
+                    EventHub.emit('gameOver');
+                }
             }
 
             move(i, j) {
                 this.state[i][j] = this.player;
-                if (this.isGameOver()) {
-                    this.gameOver = true;
-                    EventHub.emit('gameOver', {
-                        win: this.player
-                    });
+                EventHub.emit('draw');
+                if(this.isGameOver()){
+                    EventHub.emit('gameOver');
                 } else {
                     this.player = this.player > 1 ? 1 : 2;
+                    EventHub.emit("nextMove");
                 }
-                EventHub.emit('draw');
             }
 
             simulateMove(i, j) {
@@ -330,8 +325,10 @@
                 }
                 return newState;
             }
-
             isGameOver() {
+                return this.checkGameOver();
+            }
+            checkGameOver() {
                 for (let i = 0; i <= this.DIMENSION; i++) {
                     let last = -1;
                     let count = 0;
@@ -453,7 +450,7 @@
                         x++;
                         y--;
                     }
-                    if (count == 4) {
+                    if (count == 5) {
                         return true;
                     }
 
@@ -488,16 +485,6 @@
     </script>
 
     <script type="text/javascript">
-    class MoveStep {
-        constructor(x,y,value) {
-            this.x = x;
-            this.y = y;
-            this.value = value;
-        }
-    }
-    </script>
-
-    <script type="text/javascript">
         class MonteCarloTreeNode {
             constructor(state, parent) {
                 this.numberOfVisit = 0;
@@ -510,7 +497,7 @@
             }
 
             get q() {
-                return this.results["true"]- this.results["false"]
+                return this.results["true"] - this.results["false"]
             }
 
             isTerminalNode() {
@@ -541,6 +528,7 @@
                     currentSimulateState = currentSimulateState.simulateMove(action[0], action[1]);
                     return currentSimulateState.isGameOver()
                 }
+                return true;
             }
 
             simulatePolicy(possibleMoves) {
@@ -549,11 +537,15 @@
             }
 
             backpropagate(result) {
+                let key = String(result);
                 this.numberOfVisit += 1;
-                if(this.results[result] === undefined) {
-                    this.results[result] = 0;
+                if(this.results["true"] === undefined) {
+                    this.results["true"] = 0
                 }
-                this.results[result] += 1;
+                if(this.results["false"] === undefined) {
+                    this.results["false"] = 0
+                }
+                this.results[key] += 1;
                 if(this.parent){
                     this.parent.backpropagate(result)
                 }
@@ -608,7 +600,7 @@
             el: '#app',
             data() {
                 return {
-                    player: 1,
+                    game: {state: {player: 1}},
                     gameOver: false
                 }
             },
@@ -617,22 +609,24 @@
                     let root = new MonteCarloTreeNode(this.game.state);
                     let mcts = new MonteCarloSearchTree(root);
                     let bestNode = mcts.bestAction(1000);
-                    this.game.state = bestNode.state;
-                    // this.game.player = bestNode.player;
-                    this.game.draw();
+                    if(bestNode) {
+                        this.game.state = bestNode.state;
+                    } else {
+                        console.log("Can't get best child!");
+                    }
                 }
             },
             mounted() {
                 let game = new Game(this.$refs.canvas);
-                EventHub.on('stateChange', (state)=>{
-                    this.player = state.player;
-                });
                 EventHub.on('gameOver', (state)=>{
                     console.log(" gameOver ");
                     this.gameOver = true;
                 });
+                EventHub.on('nextMove', (state)=>{
+                    // this.nextMove();
+                });
                 this.game = game;
-                this.nextMove();
+                // this.nextMove();
             }
         });
     </script>
