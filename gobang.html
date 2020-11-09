@@ -16,16 +16,17 @@
         }
 
         .chess {
-            width: 850px;
-            height: 850px;
+            width: 620px;
+            height: 620px;
         }
 
         .state-board {
-            width: 200px;
+            width: 150px;
             padding: 60px 0 90px 0;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            align-items: center;
         }
 
         .carlo-cat {
@@ -40,9 +41,26 @@
             text-align: center;
         }
 
-        .filter img {
-            opacity: 0.1;
-            transition: all .5s linear;
+        .turn{
+            animation: fade 1s linear infinite;
+            border: 4px solid red;
+            border-radius: 8px;
+            position: absolute;
+            top: 60px;
+            width: 130px;
+            height: 140px;
+        }
+
+        @keyframes fade {
+            from {
+                opacity: 1.0;
+            }
+            50% {
+                opacity: 0.3;
+            }
+            to {
+                opacity: 1.0;
+            }
         }
 
         .result-dialog {
@@ -67,21 +85,21 @@
         <div class="chess">
             <canvas ref="canvas"></canvas>
         </div>
-        <div class="result-dialog" v-show="gameOver">
-            {{game.state.player == 1 ? "CarloCat win!" : "You win!"}}
-        </div>
+        <div class="result-dialog" v-show="gameOver">{{gameResult}}</div>
         <div class="state-board">
-            <div :class="game.state.player == 1 ? 'carlo-cat' : 'carlo-cat filter'">
+            <div class="carlo-cat">
                 <img
                     src='data:image/svg+xml;utf8,<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg t="1602675917851" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4880" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100"><defs><style type="text/css"></style></defs><path d="M581.18 384c-40.36 0-213.64 3.96-325.18 171.9V384c0-105.88-86.12-192-192-192-35.34 0-64 28.66-64 64s28.66 64 64 64c35.28 0 64 28.72 64 64v512c0 70.6 57.4 128 128 128h352c17.68 0 32-14.32 32-32v-32c0-35.34-28.66-64-64-64h-64l256-192v288c0 17.68 14.32 32 32 32h64c17.68 0 32-14.32 32-32V579.72c-20.58 5.34-41.78 9.08-64 9.08-123.62 0-227.04-88.1-250.82-204.8zM896 192h-128l-128-128v268.8c0 106.04 85.96 192 192 192s192-85.96 192-192V64l-128 128z m-144 160c-17.68 0-32-14.32-32-32s14.32-32 32-32 32 14.32 32 32-14.32 32-32 32z m160 0c-17.68 0-32-14.32-32-32s14.32-32 32-32 32 14.32 32 32-14.32 32-32 32z" p-id="4881"></path></svg>' />
                 卡洛猫
             </div>
 
-            <div :class="game.state.player == 2 ? 'player' : 'player filter'">
+            <div class="player">
                 <img
                     src='data:image/svg+xml;utf8,<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg t="1602675441972" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3988" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100"><defs><style type="text/css"></style></defs><path d="M833.6 762.4A308.8 308.8 0 0 1 936 1024h-85.6c1.6-12 3.2-24 3.2-36 0-72-35.2-136-92-185.6a588 588 0 0 1-499.2 0 245.6 245.6 0 0 0-92 185.6c0 12.8 1.6 24 3.2 36H88a283.2 283.2 0 0 1-2.4-36c0-86.4 40-165.6 104.8-226.4A405.6 405.6 0 0 1 0 428.8C0 192 229.6 0 512 0s512 192 512 428.8c0 134.4-74.4 254.4-190.4 333.6zM512 295.2c-236 0-426.4-80.8-426.4 122.4s190.4 368 426.4 368c236 0 426.4-164.8 426.4-368S748 296 512 296z m199.2 204.8c-32 0-56.8-21.6-56.8-48 0-25.6 25.6-47.2 56-47.2 32 0 57.6 21.6 57.6 48s-25.6 48-56.8 48zM682.4 632c0 32-76 59.2-170.4 59.2S341.6 664 341.6 632c0-8 4.8-16 14.4-24 26.4 20.8 86.4 36 156 36s129.6-15.2 156-36c9.6 8 14.4 16 14.4 24zM312.8 500c-32 0-56.8-21.6-56.8-48 0-25.6 25.6-47.2 56.8-47.2 32 0 56.8 21.6 56.8 48s-25.6 48-56 48z" p-id="3989"></path></svg>' />
                 You
             </div>
+
+            <div class="turn"></div>
         </div>
     </div>
     <script type="text/javascript">
@@ -112,7 +130,7 @@
         class Game {
             constructor(dom) {
                 this.dom = dom;
-                this.DIMENSION = 12;
+                this.DIMENSION = 8;
                 this.SIZE = 60;
                 this.QIZI = 20;
                 this.predrawPosition = [-1, -1];
@@ -130,6 +148,7 @@
 
                 this.initCanvas(dom);
                 this.eventHandle(dom);
+                this.draw();
             }
 
             get state() {
@@ -253,6 +272,10 @@
                         this.draw();
                     }
                 });
+                EventHub.on("draw", ()=> {
+                    console.log("draw>>>>>>");
+                    this.draw();
+                });
             }
             getPosition(evt) {
                 let x = evt.pageX - this.dom.offsetLeft - this.SIZE;
@@ -276,30 +299,23 @@
                 return this._state;
             }
 
-            set state(sta){
-                this._state = sta;
-                this.player = 2;
-                if(this.isGameOver()) {
-                    EventHub.emit('gameOver');
-                }
-            }
-
             move(i, j) {
                 this.state[i][j] = this.player;
                 EventHub.emit('draw');
-                if(this.isGameOver()){
+                this.player = this.player > 1 ? 1 : 2;
+                
+                if(this.getGameResult() == 1){
                     EventHub.emit('gameOver');
+                } else if(this.getGameResult() == 2){
                 } else {
-                    this.player = this.player > 1 ? 1 : 2;
                     EventHub.emit("nextMove");
                 }
             }
 
             simulateMove(i, j) {
-                let newState = this.copy();
-                newState[i][j] = this.player
-                let nextPlayer = this.player > 1 ? 1 : 2;
-                return new GameState(newState, nextPlayer);
+                this.state[i][j] = this.player;
+                this.player = this.player > 1 ? 1 : 2;
+                EventHub.emit("drawState", this.state);
             }
 
             getLegalActions() {
@@ -315,6 +331,11 @@
             }
 
             copy() {
+                let newState = this.copyState();
+                return new GameState(newState, this.player);
+            }
+
+            copyState() {
                 let newState = []
                 for (let i = 0; i <= this.DIMENSION; i++) {
                     let row = []
@@ -325,10 +346,15 @@
                 }
                 return newState;
             }
-            isGameOver() {
-                return this.checkGameOver();
+
+            getGameResult() {
+                return this.checkGameResult()
             }
-            checkGameOver() {
+
+            // 0: 游戏未结束
+            // 1: 游戏结束，有胜方
+            // 2: 平局
+            checkGameResult() {
                 for (let i = 0; i <= this.DIMENSION; i++) {
                     let last = -1;
                     let count = 0;
@@ -338,7 +364,7 @@
                     //纵向
                     while (y <= this.DIMENSION) {
                         if (count == 4) {
-                            return true;
+                            return 1;
                         } else if (this.state[x][y]) {
                             if (this.state[x][y] == last) {
                                 count++;
@@ -353,15 +379,16 @@
                         y++;
                     }
                     if (count == 4) {
-                        return true;
+                        return 1;
                     }
 
                     //横向
                     x = 0;
                     y = i;
+                    count = 0;
                     while (x <= this.DIMENSION) {
                         if (count == 4) {
-                            return true;
+                            return 1;
                         } else if (this.state[x][y]) {
                             if (this.state[x][y] == last) {
                                 count++;
@@ -376,7 +403,7 @@
                         x++;
                     }
                     if (count == 4) {
-                        return true;
+                        return 1;
                     }
 
                     //斜-45度
@@ -386,7 +413,7 @@
                     y = 0;
                     while (x <= this.DIMENSION && y <= this.DIMENSION) {
                         if (count == 4) {
-                            return true;
+                            return 1;
                         } else if (this.state[x][y]) {
                             if (this.state[x][y] == last) {
                                 count++;
@@ -402,14 +429,15 @@
                         x++;
                     }
                     if (count == 4) {
-                        return true;
+                        return 1;
                     }
 
                     x = 0;
                     y = i;
+                    count = 0;
                     while (x <= this.DIMENSION && y <= this.DIMENSION) {
                         if (count == 4) {
-                            return true;
+                            return 1;
                         } else if (this.state[x][y]) {
                             if (this.state[x][y] == last) {
                                 count++;
@@ -425,7 +453,7 @@
                         x++;
                     }
                     if (count == 4) {
-                        return true;
+                        return 1;
                     }
 
                     // 斜45度
@@ -435,7 +463,7 @@
                     y = this.DIMENSION - i;
                     while (x <= this.DIMENSION && y >= 0) {
                         if (count == 4) {
-                            return true;
+                            return 1;
                         } else if (this.state[x][y]) {
                             if (this.state[x][y] == last) {
                                 count++;
@@ -451,7 +479,7 @@
                         y--;
                     }
                     if (count == 5) {
-                        return true;
+                        return 1;
                     }
 
                     last = -1;
@@ -460,7 +488,7 @@
                     y = i;
                     while (x >= 0 && y <= this.DIMENSION) {
                         if (count == 4) {
-                            return true;
+                            return 1;
                         } else if (this.state[x][y]) {
                             if (this.state[x][y] == last) {
                                 count++;
@@ -476,19 +504,35 @@
                         y++;
                     }
                     if (count == 4) {
-                        return true;
+                        return 1;
                     }
                 }
-                return false
+
+                let zeroCount = 0
+                for (let i = 0; i <= this.DIMENSION; i++) {
+                    for (let j = 0; j <= this.DIMENSION; j++) {
+                        if(!this.state[i][j]) {
+                            zeroCount++;
+                        }
+                    }
+                }
+                if(!zeroCount){
+                    return 2;
+                }
+                return 0
             }
         }
     </script>
 
     <script type="text/javascript">
+        const KEYS = ["lose", "win", "draw"];
         class MonteCarloTreeNode {
             constructor(state, parent) {
                 this.numberOfVisit = 0;
                 this.results = {};
+                for(let v of KEYS){
+                    this.results[v] = 0
+                }
                 this.state = state;
                 this.untriedActions = [];
                 this.parent = parent;
@@ -497,11 +541,11 @@
             }
 
             get q() {
-                return this.results["true"] - this.results["false"]
+                return this.results["win"] - this.results["lose"]
             }
 
             isTerminalNode() {
-                return this.state.isGameOver();
+                return this.state.getGameResult() !== 0;
             }
 
             isFullyExpanded() {
@@ -514,7 +558,8 @@
 
             expand() {
                 let action = this.untriedActions.pop();
-                let nextState = this.state.simulateMove(action[0], action[1]);
+                let nextState = this.state;
+                nextState.simulateMove(action[0], action[1]);
                 let childNode = new MonteCarloTreeNode(nextState, this)
                 this.children.push(childNode)
                 return childNode
@@ -522,13 +567,12 @@
 
             simulate() {
                 let currentSimulateState = this.state;
-                while(!currentSimulateState.isGameOver()){
+                while(!currentSimulateState.getGameResult()){
                     let possibleMoves = currentSimulateState.getLegalActions();
                     let action = this.simulatePolicy(possibleMoves);
-                    currentSimulateState = currentSimulateState.simulateMove(action[0], action[1]);
-                    return currentSimulateState.isGameOver()
+                    currentSimulateState.simulateMove(action[0], action[1]);
                 }
-                return true;
+                return currentSimulateState.getGameResult()
             }
 
             simulatePolicy(possibleMoves) {
@@ -539,21 +583,16 @@
             backpropagate(result) {
                 let key = String(result);
                 this.numberOfVisit += 1;
-                if(this.results["true"] === undefined) {
-                    this.results["true"] = 0
-                }
-                if(this.results["false"] === undefined) {
-                    this.results["false"] = 0
-                }
-                this.results[key] += 1;
+                this.results[KEYS[result]] += 1
                 if(this.parent){
                     this.parent.backpropagate(result)
                 }
             }
 
             bestChild(cparam) {
+                console.log("bestChild>>", this.children);
                 let choicesWeights = this.children.map(child => {
-                    return (child.q / (child.numberOfVisit)) + cparam * Math.sqrt((2 * Math.log(this.numberOfVisit) / (child.numberOfVisit)))
+                    return (child.q / (child.numberOfVisit)) + cparam * Math.sqrt((2 * Math.log(this.numberOfVisit) / child.numberOfVisit))
                 });
                 let result = choicesWeights.reduce((prev, cur, index) => {
                     if(cur > prev[0]) {
@@ -600,17 +639,34 @@
             el: '#app',
             data() {
                 return {
-                    game: {state: {player: 1}},
                     gameOver: false
+                }
+            },
+            computed: {
+                gameResult() {
+                    if(this.game) {
+                        if(this.game.state.getGameResult() == 1) {
+                            if(this.player == 1) {
+                                return "You win!"
+                            } else {
+                                return "CarloCat win!"
+                            }
+                        } else if(this.game.state.getGameResult() == 2) {
+                            return "draw!"
+                        }
+                    } 
                 }
             },
             methods: {
                 nextMove() {
                     let root = new MonteCarloTreeNode(this.game.state);
                     let mcts = new MonteCarloSearchTree(root);
-                    let bestNode = mcts.bestAction(1000);
+                    let bestNode = mcts.bestAction(10);
                     if(bestNode) {
                         this.game.state = bestNode.state;
+                        if(bestNode.isTerminalNode()) {
+                            this.gameOver = true;
+                        }
                     } else {
                         console.log("Can't get best child!");
                     }
@@ -618,15 +674,18 @@
             },
             mounted() {
                 let game = new Game(this.$refs.canvas);
-                EventHub.on('gameOver', (state)=>{
+                EventHub.on('gameOver', () => {
                     console.log(" gameOver ");
                     this.gameOver = true;
                 });
-                EventHub.on('nextMove', (state)=>{
-                    // this.nextMove();
+                EventHub.on('nextMove', (state) => {
+                    this.nextMove();
+                });
+                EventHub.on('drawState', (state) => {
+                    // console.log("drawState>>", state);
                 });
                 this.game = game;
-                // this.nextMove();
+                this.nextMove();
             }
         });
     </script>
