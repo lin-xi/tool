@@ -130,7 +130,7 @@
         class Game {
             constructor(dom) {
                 this.dom = dom;
-                this.DIMENSION = 8;
+                this.DIMENSION = 7;
                 this.SIZE = 60;
                 this.QIZI = 20;
                 this.predrawPosition = [-1, -1];
@@ -558,7 +558,7 @@
 
             expand() {
                 let action = this.untriedActions.pop();
-                let nextState = this.state;
+                let nextState = this.state.copy();
                 nextState.simulateMove(action[0], action[1]);
                 let childNode = new MonteCarloTreeNode(nextState, this)
                 this.children.push(childNode)
@@ -661,7 +661,7 @@
                 nextMove() {
                     let root = new MonteCarloTreeNode(this.game.state);
                     let mcts = new MonteCarloSearchTree(root);
-                    let bestNode = mcts.bestAction(10);
+                    let bestNode = mcts.bestAction(2);
                     if(bestNode) {
                         this.game.state = bestNode.state;
                         if(bestNode.isTerminalNode()) {
@@ -675,14 +675,14 @@
             mounted() {
                 let game = new Game(this.$refs.canvas);
                 EventHub.on('gameOver', () => {
-                    console.log(" gameOver ");
+                    console.log(" gameOver>> ");
                     this.gameOver = true;
                 });
                 EventHub.on('nextMove', (state) => {
                     this.nextMove();
                 });
                 EventHub.on('drawState', (state) => {
-                    // console.log("drawState>>", state);
+                    console.log("drawState>>", state);
                 });
                 this.game = game;
                 this.nextMove();
