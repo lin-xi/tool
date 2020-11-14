@@ -581,7 +581,7 @@
             }
 
             backpropagate(result) {
-                let key = String(result);
+                console.log("backpropagate>>>", result)
                 this.numberOfVisit += 1;
                 this.results[KEYS[result]] += 1
                 if(this.parent){
@@ -626,7 +626,7 @@
                     if(currentNode.isFullyExpanded()) {
                         return currentNode.expand()
                     } else {
-                        currentNode = currentNode.bestChild();
+                        currentNode = currentNode.bestChild(0);
                     }
                 }
                 return currentNode;
@@ -661,7 +661,7 @@
                 nextMove() {
                     let root = new MonteCarloTreeNode(this.game.state);
                     let mcts = new MonteCarloSearchTree(root);
-                    let bestNode = mcts.bestAction(2);
+                    let bestNode = mcts.bestAction(100);
                     if(bestNode) {
                         this.game.state = bestNode.state;
                         if(bestNode.isTerminalNode()) {
@@ -682,7 +682,7 @@
                     this.nextMove();
                 });
                 EventHub.on('drawState', (state) => {
-                    console.log("drawState>>", state);
+                    // console.log("drawState>>", JSON.parse(JSON.stringify(state)));
                 });
                 this.game = game;
                 this.nextMove();
